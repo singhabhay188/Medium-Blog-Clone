@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
-import { z } from "zod";
 import { verify } from "hono/jwt";
+import { newPostSchema, updatePostSchema } from "@singhbetu188/medium-blog-common";
 
 export const postRouter = new Hono<{
   Bindings: { DATABASE_URL: string; JWT_SECRET: string };
@@ -58,14 +58,8 @@ postRouter.post("/", async (c) => {
 
     const body = await c.req.parseBody();
 
-    // Define schema
-    const schema = z.object({
-      title: z.string().min(3),
-      content: z.string(),
-    });
-
     // Validate input using schema
-    const parsedData = schema.safeParse(body);
+    const parsedData = newPostSchema.safeParse(body);
 
     if (!parsedData.success) {
       c.status(400);
@@ -101,15 +95,8 @@ postRouter.put("/", async (c) => {
     const userId = c.get("userId") || "";
     const body = await c.req.parseBody();
 
-    // Define schema
-    const schema = z.object({
-      id: z.string(),
-      title: z.string().min(3),
-      content: z.string(),
-    });
-
     // Validate input using schema
-    const parsedData = schema.safeParse(body);
+    const parsedData = updatePostSchema.safeParse(body);
 
     if (!parsedData.success) {
       c.status(400);
