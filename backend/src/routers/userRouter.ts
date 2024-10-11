@@ -31,7 +31,7 @@ userRouter.post("/signup", async (c) => {
       datasourceUrl: c.env.DATABASE_URL,
     }).$extends(withAccelerate());
 
-    const body = await c.req.parseBody();
+    const body = await c.req.json();
 
     // Validate input using schema
     const parsedData = signUpSchema.safeParse(body);
@@ -72,13 +72,15 @@ userRouter.post("/signup", async (c) => {
   }
 });
 
-userRouter.post("user/login", async (c) => {
+userRouter.post("/login", async (c) => {
   try {
     const prisma = new PrismaClient({
       datasourceUrl: c.env.DATABASE_URL,
     }).$extends(withAccelerate());
 
-    const body = await c.req.parseBody();
+    const body = await c.req.json();
+
+    console.log(body);
 
     // Validate input using schema
     const parsedData = logInSchema.safeParse(body);

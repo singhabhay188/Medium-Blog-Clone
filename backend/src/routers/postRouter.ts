@@ -35,12 +35,26 @@ postRouter.use("/*", async (c, next) => {
 });
 
 postRouter.get("/all", async (c) => {
+  console.log('request recieved for all posts');
   try {
     const prisma = new PrismaClient({
       datasourceUrl: c.env.DATABASE_URL,
     }).$extends(withAccelerate());
 
-    const res = await prisma.post.findMany();
+    console.log("here");
+
+    const res = await prisma.post.findMany({
+      include: {
+        author: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    console.log("here2");
 
     c.status(200);
     return c.json({ success: true, posts: res });
@@ -51,12 +65,14 @@ postRouter.get("/all", async (c) => {
 });
 
 postRouter.post("/", async (c) => {
+  console.log('request recieved for new post');
   try {
-    const prisma = new PrismaClient({
-      datasourceUrl: c.env.DATABASE_URL,
-    }).$extends(withAccelerate());
+    // const prisma = new PrismaClient({
+    //   datasourceUrl: c.env.DATABASE_URL,
+    // }).$extends(withAccelerate());
 
-    const body = await c.req.parseBody();
+    const body = await c.req.json();
+    console.log(body);
 
     // Validate input using schema
     const parsedData = newPostSchema.safeParse(body);
@@ -68,18 +84,20 @@ postRouter.post("/", async (c) => {
 
     const { title, content } = parsedData.data;
     const userId = c.get("userId") || "";
+    c.status(201);
+    return c.json({ success: true, userId });
 
     //add new post
-    const npost = await prisma.post.create({
-      data: {
-        title,
-        content,
-        authorId: userId,
-      },
-    });
+    // const npost = await prisma.post.create({
+    //   data: {
+    //     title,
+    //     content,
+    //     authorId: userId,
+    //   },
+    // });
 
-    c.status(201);
-    return c.json({ success: true, npost });
+    //c.status(201);
+    //return c.json({ success: true, npost });
   } catch (err) {
     c.status(500);
     return c.json({ success: false, error: "Internal Server Error" });
@@ -139,20 +157,28 @@ postRouter.get("/:id", async (c) => {
     const prisma = new PrismaClient({
       datasourceUrl: c.env.DATABASE_URL,
     }).$extends(withAccelerate());
-	
-	const post = await prisma.post.findUnique({
-		where: {
-			id
-		}
-	});
 
-    if(!post){
-        c.status(404);
-        return c.json({success: false, error: "Post not found"});
+    const post = await prisma.post.findUnique({
+      where: {
+        id
+      },
+      include: {
+        author: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    if (!post) {
+      c.status(404);
+      return c.json({ success: false, error: "Post not found" });
     }
 
     c.status(200);
-	return c.json({success:true,post});
+    return c.json({ success: true, post });
   } catch (e) {
     console.log(e);
     c.status(500);
